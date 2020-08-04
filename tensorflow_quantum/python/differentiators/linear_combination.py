@@ -95,17 +95,12 @@ class LinearCombination(differentiator.Differentiator):
         self.n_perturbations = tf.constant(len(perturbations))
         self.perturbations = tf.constant(perturbations)
 
-    @tf.function
-    def differentiate_analytic(self, programs, symbol_names, symbol_values,
-                               pauli_sums, forward_pass_vals, grad):
-
+    def get_gradient_logic(self, programs, symbol_names, symbol_values,
+                           pauli_sums):
         # these get used a lot
         n_symbols = tf.gather(tf.shape(symbol_names), 0)
         n_programs = tf.gather(tf.shape(programs), 0)
         n_ops = tf.gather(tf.shape(pauli_sums), 1)
-
-        # STEP 1: Generate required inputs for executor
-        # in this case I can do this with existing tensorflow ops if i'm clever
 
         # don't do any computation for a perturbation of zero, just use
         # forward pass values
@@ -179,10 +174,16 @@ class LinearCombination(differentiator.Differentiator):
                 tf.stack(
                     [tf.multiply(n_symbols, n_non_zero_perturbations), 1, 1])),
             [total_programs, n_ops])
+        return [flat_programs, symbol_names, flat_perturbations, flat_ops]
 
+    @tf.function
+    def differentiate_analytic(self, programs, symbol_names, symbol_values,
+                               pauli_sums, forward_pass_vals, grad):
+
+        logic_for_grads = get_gradient_logic()
+        
         # STEP 2: calculate the required expectation values
-        expectations = self.expectation_op(flat_programs, symbol_names,
-                                           flat_perturbations, flat_ops)
+        expectations = self.expectation_op(*logic_for_grads)
 
         # STEP 3: generate gradients according to the results
 
