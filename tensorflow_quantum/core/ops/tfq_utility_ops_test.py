@@ -167,8 +167,7 @@ class ResolveParametersOpTest(tf.test.TestCase, parameterized.TestCase):
               for symbol in symbol_names]
              for resolver in resolver_batch])
 
-        with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
-                                    'must be rank 1'):
+        with self.assertRaisesRegex(ValueError, 'must be rank 1'):
             # programs tensor has the wrong shape (too many dims).
             tfq_utility_ops.resolve_parameters(
                 util.convert_to_tensor([circuit_batch]), symbol_names,
